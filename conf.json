@@ -1,0 +1,20 @@
+{
+  "registry": {
+    "url": "https://10.211.55.40:5000",
+    "base_path": "/var/data/registry"
+  },
+  "curl": [
+    "/usr/bin/curl",
+    "-k","-s","-q",
+    "-H", "Accept: application/vnd.docker.distribution.manifest.v2+json"
+  ],
+  "sql": {
+    "except_latest":" tag_name <> 'latest'",
+    "r2.2.1": "tag_name='2.2.1'"
+  },
+  "gc-command": [
+    "docker","exec","registry2","/bin/registry",
+    "garbage-collect",
+    "/etc/docker/registry/config.yml"
+  ]
+}
