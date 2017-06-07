@@ -7,6 +7,8 @@ import sys
 import subprocess
 import json
 import time
+import shutil
+import os.path
 from datetime import datetime
 
 fp = open("conf.json")
@@ -14,12 +16,46 @@ conf = json.load(fp)
 con = sqlite3.connect(':memory:')
 cursor = con.cursor()
 
+registry_root = conf["registry"]["base_path"]
+
+def list_orphan(root_dir):
+    repo_root = os.path.join(root_dir,"docker/registry/v2/repositories")
+    repositories = os.listdir(repo_root)
+    result = {}
+    for repo_name in repositories:
+        repo_path = os.path.join(repo_root, repo_name)
+        tag_root = os.path.join(repo_path, "_manifests/tags")
+        rev_root = os.path.join(repo_path, "_manifests/revisions")
+        tag_list = os.listdir(tag_root)
+        if len(tag_list) == 0:
+            shutil.rmtree(repo_path)
+            continue
+        tag_sha_list = get_tag_sha_list(tag_root)
+        revision_sha_list = get_revision_sha_list(rev_root)
+        orphan_list = filter(lambda x: x not in tag_sha_list, revision_sha_list)
+        result[repo_name] = orphan_list
+    return result
+
+def get_tag_sha_list(tag_root):
+    tag_list = os.listdir(tag_root)
+    result = []
+    for tag in tag_list:
+        text_file = os.path.join(tag_root, tag, "current/link")
+        with open(text_file, 'r') as f:
+            first_line = f.readline()
+            sha = first_line[7:]
+            result.append(sha)
+    return result
+
+def get_revision_sha_list(revision_root):
+    rev_list = os.listdir(os.path.join(revision_root, "sha256"))
+    return rev_list
+
+
 def del_manifest(image_name, tag_hash):
     command = conf["curl"] + ["-X", "DELETE"]
     url = conf["registry"]["url"] + "/v2/{}/manifests/{}"
     url = url.format(image_name, tag_hash)
-    print command + [url]
-
     subprocess.check_call(command + [url])
 
 
@@ -133,11 +169,25 @@ def db_init():
 
 
 def main(sql_id, action):
+    orphan = list_orphan(registry_root)
+    for image in orphan.keys():
+        sha_list = orphan[image]
+        for sha in sha_list:
+            del_manifest(image, "sha256:"+sha)
+            os.rmdir(
+                os.path.join(registry_root, "docker/registry/v2/repositories",
+                image, "_manifests/revisions/sha256/", sha)
+            )
+
+
     condition = conf["sql"][sql_id]
     db_init()
     image_list = get_image_list()
     for image_name in image_list:
         tag_list = get_tag_list(image_name)
+        if tag_list == None:
+            print "Tag list of Image {} is null" % image_name
+            continue
         for tag_name in tag_list:
             (tag_hash,blob_list) = get_blob_list(image_name, tag_name)
             tag_record = {"image_name": image_name, "tag_name": tag_name,

@@ -2,18 +2,29 @@
 
 *v2 API only*
 
-## known issues
-
-When there is only one tag of an image, del operation will remove the tag, but the image remains here, and its tag list will be null.
+- Select images from Docker registry with sql conditions and remove them.
+- Find orphan manifests from Docker reistry and remove them.
+- Release disk space.
 
 ---
 
 Usage: `clear.py sql_id action`
 
+
+
 - **sql_id**: It's conditions will be used to filter the images.
 - **action**:
 	- del: remove the tags , and run gc.
 	- none: list view.
+
+## Configuration
+
+All configuration items stored into conf.json.
+
+### registry
+
+- url: URL of the registry endpoint.
+- base_path: registry file root, MUST CAN BE WRITE by the script.
 
 ## Data Structure
 
@@ -68,14 +79,13 @@ for example:
 
 `clear.py autobuild del`
 
-# Docker 私库镜像
+# 清理 Docker 私库镜像
 
 *仅支持 v2 API*
 
-## 已知问题
-
-
-如果私库中的某个镜像仅有一个 Tag，对其进行删除操作的后果是，镜像还在，缺没有 Tag。
+- 利用 SQL 条件语句对 Docker 私库进行查询并删除。
+- 删除孤立的 manifest。
+- 回收磁盘空间
 
 ---
 
