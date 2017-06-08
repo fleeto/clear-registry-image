@@ -6,10 +6,14 @@
 - Find orphan manifests from Docker reistry and remove them.
 - Release disk space.
 
+From [@mortensteenrasmussen](https://github.com/mortensteenrasmussen/docker-registry-manifest-cleanup):
+
+> Docker images can be pulled both via image:tag and via image@digest. Because of this, if you overwrite an image:tag with a different one (e.g., pushing nightly to whateverimage:latest) you will still be able to pull the OLD versions of that tag by using image@digest. This functionality means the registry garbage collect cannot remove an image because a reference still exists.
+
+
 ---
 
 Usage: `clear.py sql_id action`
-
 
 
 - **sql_id**: It's conditions will be used to filter the images.
@@ -86,6 +90,8 @@ for example:
 - 利用 SQL 条件语句对 Docker 私库进行查询并删除。
 - 删除孤立的 manifest。
 - 回收磁盘空间
+
+> Docker 私库的 Hash 和 Tag 都是找到一个 Manifest 的有效方法，但是，从 Image 是只能找到 Tag 的；另外对同一个 Tag 的重复 Push，并不会删除原有的 Manifest，这就造出一个只有 Hash 没有 Tag 的 Manifest。
 
 ---
 
