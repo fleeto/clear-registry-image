@@ -97,19 +97,37 @@ for example:
 	- none: 列表展示
 
 
+## 配置
+
+所有配置文件都保存在 conf.json 中
+
+### registry
+
+- url: 私库地址。
+- base_path: 私库的目录，必须能被本脚本写入。
+
 ## 数据结构
+
+The script will store image info into a in-memory sqlite database.
 
 脚本用 SQLite 的内存数据库进行缓存
 
 ~~~sql
+CREATE TABLE images
+(id INTEGER PRIMARY KEY,image_name TEXT,
+	tag_name TEXT, tag_timestamp INTEGER,
+	tag_hash TEXT,tag_size INTEGER);
 
-CREATE TABLE images (id INTEGER PRIMARY KEY,image_name TEXT, tag_name TEXT, tag_timestamp INTEGER, tag_hash TEXT,tag_size INTEGER);
+CREATE TABLE relations
+(id INTEGER PRIMARY KEY,image_name TEXT,
+	tag_name TEXT, blob_hash TEXT);
 
-CREATE TABLE relations (id INTEGER PRIMARY KEY,image_name TEXT, tag_name TEXT, blob_hash TEXT);
-
-CREATE TABLE blobs (id INTEGER PRIMARY KEY, blob_hash TEXT, blob_size INTEGER, blob_date INTEGER)
+CREATE TABLE blobs
+(id INTEGER PRIMARY KEY, blob_hash TEXT,
+	blob_size INTEGER, blob_date INTEGER)
 
 ~~~
+
 
 
 SQL 语句的条件会保存在 conf.json 文件中，

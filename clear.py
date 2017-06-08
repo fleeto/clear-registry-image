@@ -20,7 +20,7 @@ registry_root = conf["registry"]["base_path"]
 
 def list_orphan(root_dir):
     repo_root = os.path.join(root_dir,"docker/registry/v2/repositories")
-    repositories = os.listdir(repo_root)
+    repositories = get_image_list()
     result = {}
     for repo_name in repositories:
         repo_path = os.path.join(repo_root, repo_name)
@@ -28,6 +28,7 @@ def list_orphan(root_dir):
         rev_root = os.path.join(repo_path, "_manifests/revisions")
         tag_list = os.listdir(tag_root)
         if len(tag_list) == 0:
+            print "Removing empty repo: {}...\n".format(repo_name)
             shutil.rmtree(repo_path)
             continue
         tag_sha_list = get_tag_sha_list(tag_root)
@@ -53,6 +54,7 @@ def get_revision_sha_list(revision_root):
 
 
 def del_manifest(image_name, tag_hash):
+    print "  {}:{} is being deleted\n".format(image_name, tag_hash)
     command = conf["curl"] + ["-X", "DELETE"]
     url = conf["registry"]["url"] + "/v2/{}/manifests/{}"
     url = url.format(image_name, tag_hash)
@@ -169,17 +171,19 @@ def db_init():
 
 
 def main(sql_id, action):
+    print "Checking and removing orphans...\n"
     orphan = list_orphan(registry_root)
     for image in orphan.keys():
         sha_list = orphan[image]
         for sha in sha_list:
+            print "Orphan: {}:{} is being deleted.".format(image, sha)
             del_manifest(image, "sha256:"+sha)
             os.rmdir(
                 os.path.join(registry_root, "docker/registry/v2/repositories",
                 image, "_manifests/revisions/sha256/", sha)
             )
 
-
+    print "Building image data tables...\n"
     condition = conf["sql"][sql_id]
     db_init()
     image_list = get_image_list()
@@ -217,10 +221,12 @@ def main(sql_id, action):
             )
 
     if action == "del":
+        print "Removing tags...\n"
         for record in tag_list:
             image_name = record[0]
             hash_value = record[2]
             del_manifest(image_name, hash_value)
+        print "GC running...\n"
         subprocess.check_call(conf["gc-command"])
 
 
