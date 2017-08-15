@@ -193,7 +193,12 @@ def main(sql_id, action):
             print "Tag list of Image {} is null" % image_name
             continue
         for tag_name in tag_list:
-            (tag_hash,blob_list) = get_blob_list(image_name, tag_name)
+            try:
+                (tag_hash,blob_list) = get_blob_list(image_name, tag_name)
+            except Exception, error:
+                print "An exception was thrown!"
+                print str(error)
+                break
             tag_record = {"image_name": image_name, "tag_name": tag_name,
                           "tag_size": 0, "tag_timestamp": 0,
                           "tag_hash": tag_hash}
